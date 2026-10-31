@@ -2,7 +2,11 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 .venv/
+venv/
+env/
+ENV/
 
 # Data
 data/raw/
@@ -15,5 +19,43 @@ models/
 *.pkl
 *.joblib
 
-# Environment variables
+# Environment variables and secrets
 .env
+.envrc
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+.spyderproject/
+.spyproject/
+
+# Type checking and linting
+.mypy_cache/
+.pytype/
+.ruff_cache/
+
+# Logs and temporary files
+*.log
+tempCodeRunnerFile.py
+
+# OS files
+.DS_Store
+Thumbs.db
