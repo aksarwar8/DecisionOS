@@ -3,6 +3,22 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 
 
+
+def time_based_split(features, test_days=28):
+
+    max_day = features["day_number"].max()
+    cutoff_day = max_day - test_days
+
+    train = features[
+        features["day_number"] <= cutoff_day
+    ].copy()
+
+    test = features[
+        features["day_number"] > cutoff_day
+    ].copy()
+
+    return train, test
+
 def train_random_forest(features):
 
     features = features.copy()
