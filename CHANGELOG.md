@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.3.2 — Professional React Frontend
+
+- Made React the primary dashboard with catalog-filtered analytics, comparisons, heatmaps, seasonality, pricing, forecast workload preview and batch runs, MLflow views, and loaded-result exports. Streamlit remains a legacy fallback while detailed feature acceptance continues.
+
+## 1.3.1
+
+- Added bounded common-origin batch forecasting, scope previews, pair exclusions, and bottom-up breakdowns.
+- Added forecast workload limits and a batch mode in the Demand Forecasting dashboard.
+
+## 1.2.5
+
+- Added historical seasonality, calendar-event and event-relative comparisons, and state-specific SNAP analysis.
+- Added conditional weekly price intelligence with price-match coverage, demand comparisons around observed quote changes, and estimated value for matched sales.
+- Added timestamped CSV reports and deterministic Markdown summaries of loaded analyses.
+- Documented query performance and a future pre-aggregation plan.
+
+## 1.2.4
+
+- Added store drill-downs, demand and growth rankings, and comparisons for up to five stores.
+- Added state, category, and department reports with historical trends, product counts, and contribution.
+- Added store-category, store-department, and state-category heatmaps and CSV exports. Missing cells remain distinct from recorded zero demand.
+
 ## 1.2.3
 
 - Added Product Intelligence with product-day metrics, growth and variability rankings, five-product comparison, and CSV exports.

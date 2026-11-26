@@ -17,7 +17,7 @@ _RANK_SORTS = {
 }
 
 
-def _scope(query, *, comparison=False, product_ids=None):
+def _scope(query, *, comparison=False, product_ids=None, store_ids=None, metadata=()):
     params = {"days": query.days, "end_date": query.end_date}
     conditions = []
     for field, column in _FILTER_COLUMNS.items():
@@ -29,8 +29,16 @@ def _scope(query, *, comparison=False, product_ids=None):
     if product_ids is not None:
         params["product_ids"] = product_ids
         conditions.append("AND (c.date >= b.period_start OR s.product_id = ANY(:product_ids))")
-    product_join = "JOIN products p ON p.id = s.product_id" if query.category or query.department else ""
-    store_join = "JOIN stores st ON st.id = s.store_id" if query.state else ""
+    if store_ids is not None:
+        params["store_ids"] = store_ids
+        conditions.append("AND s.store_id = ANY(:store_ids)")
+    columns = "".join(f", {_FILTER_COLUMNS[field]} AS {field}" for field in metadata)
+    product_join = (
+        "JOIN products p ON p.id = s.product_id"
+        if query.category or query.department or {"category", "department"}.intersection(metadata)
+        else ""
+    )
+    store_join = "JOIN stores st ON st.id = s.store_id" if query.state or "state" in metadata else ""
     start = "b.period_start - :days" if comparison else "b.period_start"
     return f"""
         WITH latest AS MATERIALIZED ({_PLATFORM_LATEST}),
@@ -42,7 +50,7 @@ def _scope(query, *, comparison=False, product_ids=None):
             ) requested
         ), facts AS (
             SELECT s.product_id, s.store_id, c.date AS sale_day, s.sales_quantity,
-                   c.date >= b.period_start AS in_current
+                   c.date >= b.period_start AS in_current {columns}
             FROM sales s JOIN calendar c ON c.id = s.calendar_id CROSS JOIN bounds b
             {product_join} {store_join}
             WHERE b.period_end <= b.latest_sales_date AND c.date BETWEEN {start} AND b.period_end

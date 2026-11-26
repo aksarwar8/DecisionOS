@@ -3,17 +3,8 @@ from sqlalchemy import text
 
 from backend.api.schemas.product_intelligence import ABCQuery, DemandSegmentQuery, ProductComparisonQuery
 from backend.services import product_intelligence_service as service
-from src.decisionos.data.extract import get_engine
 
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture
-def connection():
-    with get_engine().connect() as conn:
-        conn.exec_driver_sql("SET TRANSACTION READ ONLY")
-        conn.exec_driver_sql("SET LOCAL statement_timeout = '5s'")
-        yield conn
 
 
 def _fixture_statement(rows, statement):

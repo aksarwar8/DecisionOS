@@ -6,6 +6,7 @@ import requests
 import streamlit as st
 
 from dashboard import api_client
+from dashboard.business_reports import report_downloads, stamp_report
 from dashboard.catalog_widgets import select_product_scope, select_store_scope
 
 _PERIODS = [30, 60, 90, 180, 365]
@@ -20,7 +21,7 @@ def _report(view, **params):
         st.session_state.pop(key, None)
         with st.spinner("Aggregating historical sales…"):
             try:
-                st.session_state[key] = (selection, api_client.get_sales_report(view=view, **params))
+                st.session_state[key] = (selection, stamp_report(api_client.get_sales_report(view=view, **params)))
             except (requests.Timeout, requests.ConnectionError):
                 st.error("The sales analysis could not reach the API in time. Try again.")
             except requests.HTTPError as error:
@@ -39,11 +40,11 @@ def _report(view, **params):
     return st.session_state.get(key, (None, None))[1]
 
 
-def _controls(prefix, *, show_interval=True):
+def _controls(prefix, *, show_interval=True, periods=None):
     columns = st.columns(3 if show_interval else 2)
     period_col, end_col = columns[0], columns[-1]
     with period_col:
-        days = st.selectbox("Analysis period", _PERIODS, format_func=lambda value: f"{value} days",
+        days = st.selectbox("Analysis period", periods or _PERIODS, format_func=lambda value: f"{value} days",
                             key=f"{prefix}_days")
     values = {"days": days}
     if show_interval:
@@ -135,23 +136,12 @@ def _rankings(rows, title):
     )
 
 
-def _download(report):
-    records = [
-        {"section": "comparison", "label": period, **report["growth"][period]}
-        for period in ("current", "previous")
-    ]
-    records.append({
-        "section": "growth",
-        "absolute_change": report["growth"]["absolute_change"],
-        "percentage_change": report["growth"]["percentage_change"],
-    })
-    records.extend({"section": "trend", **row} for row in report["trend"])
-    for dimension, rows in report["breakdowns"].items():
-        records.extend({"section": dimension, **row} for row in rows)
-    st.download_button(
-        "Download analysis CSV", pd.DataFrame(records).to_csv(index=False),
-        file_name=f"decisionos_sales_{report['period_end']}.csv", mime="text/csv",
-    )
+def _download(title, report, filters):
+    report_downloads(title, report, filters, (
+        "Demand measures units sold. Periods are adjacent and equal in length.",
+        "Missing observations remain blank. Calendar-day averages use the requested window length.",
+        "Contribution uses all observed demand in the selected scope.",
+    ))
 
 
 def _system_status():
@@ -171,7 +161,8 @@ def _system_status():
 
 def show_executive_overview():
     st.title("Executive Overview")
-    report = _report("executive", **_controls("executive"))
+    params = _controls("executive")
+    report = _report("executive", **params)
     if report is not None:
         _growth(report)
         cols = st.columns(3)
@@ -185,6 +176,7 @@ def show_executive_overview():
             _rankings(report["top_products"], "Top five products")
         with right:
             _rankings(report["top_stores"], "Top five stores")
+        _download("Executive performance", report, params)
     _system_status()
 
 
@@ -210,4 +202,4 @@ def show_sales_intelligence():
     _breakdown(report, "department")
     geography = st.radio("Geographic breakdown", ["Store", "State"], horizontal=True, key="sales_geography")
     _breakdown(report, geography.lower())
-    _download(report)
+    _download("Sales Intelligence", report, params)

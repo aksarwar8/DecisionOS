@@ -76,6 +76,18 @@ def generate_forecast(
     return response.json()
 
 
+def preview_forecast_scope(payload):
+    response = requests.post(f"{_base_url()}/forecast/scope-preview", json=payload, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+
+def generate_batch_forecast(payload):
+    response = requests.post(f"{_base_url()}/forecast/batch", json=payload, timeout=120)
+    response.raise_for_status()
+    return response.json()
+
+
 def get_product_analytics(
     product_id: int,
     days: int = 90,
@@ -215,3 +227,55 @@ def get_demand_segments(**params):
 
 def get_abc_analysis(**params):
     return _get_sales_analysis("abc-analysis", **params)
+
+
+def get_store_performance(**params):
+    return _get_sales_analysis("store-performance", **params)
+
+
+def get_store_rankings(**params):
+    return _get_sales_analysis("store-rankings", **params)
+
+
+def get_store_comparison(**params):
+    return _get_sales_analysis("store-comparison", **params)
+
+
+def get_state_performance(**params):
+    return _get_sales_analysis("state-performance", **params)
+
+
+def get_category_performance(**params):
+    return _get_sales_analysis("category-performance", **params)
+
+
+def get_demand_matrix(**params):
+    return _get_sales_analysis("demand-matrix", **params)
+
+
+def get_capabilities():
+    return _get_sales_analysis("capabilities")
+
+
+def get_event_catalog():
+    return _get_sales_analysis("event-catalog")
+
+
+def get_seasonality(**params):
+    return _get_sales_analysis("seasonality", **params)
+
+
+def get_event_analysis(**params):
+    return _get_sales_analysis("event-analysis", **params)
+
+
+def get_event_window(**params):
+    return _get_sales_analysis("event-window", **params)
+
+
+def get_snap_analysis(**params):
+    return _get_sales_analysis("snap-analysis", **params)
+
+
+def get_price_intelligence(**params):
+    return _get_sales_analysis("price-intelligence", **params)

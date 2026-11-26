@@ -4,6 +4,7 @@ from functools import lru_cache
 
 import mlflow
 import pandas as pd
+from mlflow.tracking import MlflowClient
 
 from src.decisionos.config import get_settings
 from src.decisionos.ml.train import FEATURE_COLUMNS
@@ -23,7 +24,7 @@ def configure_mlflow() -> str:
 
 
 @lru_cache(maxsize=1)
-def load_forecasting_model():
+def load_forecasting_model_info():
     """
     Load the registered Random Forest model.
 
@@ -32,7 +33,9 @@ def load_forecasting_model():
     """
 
     configure_mlflow()
-    model_uri = get_settings().registered_model_uri
+    settings = get_settings()
+    version = MlflowClient().get_model_version_by_alias(settings.model_name, settings.model_alias)
+    model_uri = f"models:/{settings.model_name}/{version.version}"
 
     model = mlflow.sklearn.load_model(
         model_uri
@@ -40,7 +43,11 @@ def load_forecasting_model():
 
     logger.info("DecisionOS forecasting model loaded: %s", model_uri)
 
-    return model
+    return model, str(version.version)
+
+
+def load_forecasting_model():
+    return load_forecasting_model_info()[0]
 
 
 def predict_demand(model, input_df: pd.DataFrame):

@@ -15,6 +15,8 @@ from backend.api.routes import (
     catalog,
     sales_intelligence,
     product_intelligence,
+    store_intelligence,
+    calendar_intelligence,
 )
 from src.decisionos.logging_config import configure_logging
 
@@ -88,3 +90,5 @@ app.include_router(analytics.router)
 app.include_router(catalog.router)
 app.include_router(sales_intelligence.router)
 app.include_router(product_intelligence.router)
+app.include_router(store_intelligence.router)
+app.include_router(calendar_intelligence.router)

@@ -87,16 +87,24 @@ def _change_page(offset_key, selection_key, offset):
     st.session_state.pop(selection_key, None)
 
 
-def select_store_scope(
-    prefix: str, *, placeholder="All matching stores",
-) -> tuple[str | None, int | None]:
+def select_state_scope(prefix: str) -> str | None:
     states = _catalog_data("states")["states"]
-    state = st.selectbox("State", [None, *states], key=f"{prefix}_state",
-                         format_func=lambda value: value if value is not None else "All states")
-    stores = {
+    return st.selectbox("State", [None, *states], key=f"{prefix}_state",
+                        format_func=lambda value: value if value is not None else "All states")
+
+
+def store_options(state):
+    return {
         entry["store_id"]: entry["store_code"]
         for entry in _catalog_data("stores", state=state)
     }
+
+
+def select_store_scope(
+    prefix: str, *, placeholder="All matching stores",
+) -> tuple[str | None, int | None]:
+    state = select_state_scope(prefix)
+    stores = store_options(state)
     selection_key = f"{prefix}_store"
     if st.session_state.get(selection_key) not in stores:
         st.session_state.pop(selection_key, None)

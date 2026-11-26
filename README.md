@@ -1,19 +1,23 @@
 # DecisionOS
 
-DecisionOS is a retail demand forecasting and business intelligence platform. It serves a Random Forest recursively and uses a historical mean for the zero-average demand segment. The current milestone, V1.2.3, adds product intelligence to the existing forecasting, catalog, and sales analytics workflows.
+DecisionOS is a retail demand forecasting and business intelligence platform. It serves a Random Forest recursively and uses a historical mean for the zero-average demand segment. V1.2.5 completes the business analytics expansion with seasonality, event and SNAP analysis, quote-based pricing, and downloadable reports.
 
 - **Executive Overview** compares adjacent sales periods and shows demand trends, category contribution, and top products and stores.
 - **Sales Intelligence** filters historical demand by state, store, category, and department, with daily, weekly, and monthly charts and a CSV export.
 - **Product Intelligence** measures demand variability and zero-demand frequency, ranks products, compares up to five products, and shows product-store demand segments and volume-based ABC analysis.
+- **Store & Category Intelligence** ranks stores, compares up to five store codes, analyzes states and merchandise hierarchies, and shows demand, contribution, and growth heatmaps.
+- **Seasonality & Events** analyzes daily demand patterns, weekday-matched event comparisons, state-specific SNAP associations, and weekly price quotes for a selected item and store when the required data is available.
+- **Business reports** export loaded executive, sales, product, store, calendar, and price analyses as timestamped CSV and Markdown files.
 - **Demand Forecasting** and **Product & Store Intelligence** use searchable catalogs so users can select item and store codes directly.
+- **Batch forecasting** previews a catalog scope, validates aligned pair histories, and aggregates eligible forecasts with coverage and model provenance.
 - **Model Intelligence** exposes MLflow evaluation runs and registered model metadata.
 
 ## Architecture
 
 ```text
 PostgreSQL actual sales -> training data validation -> lag and calendar features -> Random Forest
-PostgreSQL pair history -> recursive Random Forest and hybrid policy -> FastAPI -> Streamlit
-PostgreSQL actual sales -> analytics windows and summaries -> FastAPI -> Streamlit
+PostgreSQL pair history -> recursive Random Forest and hybrid policy -> FastAPI -> React
+PostgreSQL actual sales -> analytics windows and summaries -> FastAPI -> React
 MLflow tracking and registry -> model loading, run metadata, and evaluation history
 ```
 
@@ -21,12 +25,15 @@ MLflow tracking and registry -> model loading, run metadata, and evaluation hist
 |---|---|
 | `src/decisionos/data/`, `features/`, `ml/` | Extraction and validation, feature generation, evaluation and forecasting |
 | `src/decisionos/pipelines/` | Explicit training and evaluation workflows |
-| `backend/`, `dashboard/` | FastAPI services and Streamlit interface |
+| `backend/`, `frontend/` | FastAPI services and the primary React interface |
+| `dashboard/` | Legacy Streamlit fallback |
 | `tests/unit/` | Synthetic and mocked automated tests |
 | `experiments/`, `scripts/diagnostics/` | Manual model experiments, API and database checks, and MLflow utilities |
 | `docs/engineering/`, `docs/experiments/` | Milestone guides, PostgreSQL review, and historical experiment evidence |
 
 ## Local setup
+
+The primary React dashboard in `frontend/` supports analytics, individual and batch forecasting, MLflow metadata and report exports. The user has confirmed that it runs in a browser. Detailed workflow acceptance remains tracked in the [feature checklist](docs/engineering/frontend_feature_parity.md). The [migration guide](docs/engineering/frontend_migration_guide.md) describes the legacy Streamlit fallback.
 
 Use Python 3.11. Run these commands from the repository root in PowerShell when setting up a new checkout.
 
@@ -43,14 +50,16 @@ Reuse an existing working environment and `.env` when available. Use `requiremen
 - Keep the existing MLflow SQLite file and accessible artifact locations, or configure `MLFLOW_TRACKING_URI` for an existing store. The default resolves `mlflow.db` from the repository root. Forecasting loads `DecisionOS-Hybrid-Forecaster@candidate` by default. The API caches the model for the process, so restart the API after intentionally changing the alias or configuration.
 - The dashboard uses `API_BASE_URL=http://127.0.0.1:8000` by default. Process environment variables override the project `.env`. Repository-relative model, forecast output, and tracking paths resolve from the project root.
 
-Run the API and dashboard in separate shells with the environment active.
+Run the API and React dashboard in separate shells.
 
 ```powershell
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
-python -m streamlit run dashboard/app.py
+cd frontend
+npm ci
+npm run dev
 ```
 
-Open the API documentation at `http://127.0.0.1:8000/docs`. `GET /health` checks API liveness. Database- or registry-backed routes require their respective configured services.
+Use Node.js 22.12 or newer in the Node 22 series. Open React at `http://localhost:5173` and API documentation at `http://127.0.0.1:8000/docs`. Run `npm run build` in `frontend/` for a production build. `GET /health` checks API liveness. Database- or registry-backed routes require their respective configured services. The legacy fallback remains available with `python -m streamlit run dashboard/app.py` from the project root.
 
 ## Analytics definitions
 
@@ -74,6 +83,11 @@ python -m pytest -q
 python -m pytest tests/unit/test_feature_parity.py -v
 python -m ruff check src backend dashboard tests
 python -m pip check
+cd frontend
+npm run typecheck
+npm run lint
+npm test
+npm run build
 ```
 
 Default Pytest discovery is restricted to `tests/` and excludes marked integration tests. Run manual scripts from the project root with `python -m` so project imports resolve.
@@ -90,7 +104,7 @@ The guarded scripts in `experiments/` can query substantial history, train model
 
 The existing M5 28-day recursive evaluation for April 1–28, 2011 reported hybrid MAE **0.6198**, RMSE **1.9979**, and WAPE **77.03%** on 853,720 observations. The four seven-day rolling-origin folds in the same month reported average MAE **0.5866**, RMSE **1.8579**, and mean fold WAPE **73.2290%**. Those historical runs cover one month and were not repeated for V1.1. [28-day evaluation](docs/experiments/hybrid_model_evaluation.md) · [Rolling-origin evaluation](docs/experiments/rolling_origin_backtest.md)
 
-Recursive forecasts reuse prior predictions and can accumulate errors across the horizon. The direct prediction endpoint relies on caller-supplied feature values. Broad overview and store queries have potential PostgreSQL scan costs documented in the database review. Clean-install reproducibility, browser smoke testing, and remote CI are pending. Application health does not establish database or model readiness.
+Recursive forecasts reuse prior predictions and can accumulate errors across the horizon. Batch forecasting enforces configured synchronous workload limits and reports excluded histories. The direct prediction endpoint relies on caller-supplied feature values. Broad analytics can approach database time limits, as documented in the database review. Clean-install reproducibility and detailed browser workflow acceptance remain unverified. Application health does not establish database or model readiness.
 
 Future milestones may expand forecasting evaluation, uncertainty, explainability, replenishment recommendations, retrieval and LLM tooling, deployment and operational monitoring.
 
@@ -99,3 +113,9 @@ Future milestones may expand forecasting evaluation, uncertainty, explainability
 [Product and store catalog guide](docs/engineering/v1_2_1_catalog_guide.md) · [Sales Intelligence guide](docs/engineering/v1_2_2_sales_intelligence_guide.md)
 
 [Product Intelligence guide](docs/engineering/v1_2_3_product_intelligence_guide.md)
+
+[Store & Category Intelligence guide](docs/engineering/v1_2_4_store_category_intelligence_guide.md)
+
+[Batch forecasting guide](docs/engineering/v1_3_1_batch_hierarchical_forecasting_guide.md)
+
+[Seasonality, Events & Reporting guide](docs/engineering/v1_2_5_seasonality_events_reporting_guide.md) · [Analytics performance plan](docs/engineering/analytics_performance_plan.md)

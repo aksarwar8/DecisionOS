@@ -198,7 +198,7 @@ def test_dashboard_loads_only_on_click_and_clears_results_on_filter_changes(monk
     }
     rank = {"rank": 1, "entity_id": 4, "code": "HOBBIES_1_004", "total_demand": 63}
     report = MagicMock(return_value={
-        "period_end": "2016-04-24", "period_days": 30, "aggregation": "weekly",
+        "period_start": "2016-03-26", "period_end": "2016-04-24", "period_days": 30, "aggregation": "weekly",
         "growth": {
             "current": {"start": "2016-03-26", "end": "2016-04-24", "total_demand": 63,
                         "observed_days": 29, "missing_days": 1},
@@ -220,6 +220,7 @@ def test_dashboard_loads_only_on_click_and_clears_results_on_filter_changes(monk
         dashboard.button(key="executive_load_report").click().run()
         report.assert_called_once_with(view="executive", days=30, aggregation="weekly", end_date=None)
         assert not dashboard.exception and len(dashboard.dataframe) == 2 and dashboard.warning
+        assert len(dashboard.get("download_button")) == 2
         dashboard.selectbox(key="executive_days").set_value(60).run()
         assert not dashboard.metric and report.call_count == 1
 
@@ -232,7 +233,7 @@ def test_dashboard_loads_only_on_click_and_clears_results_on_filter_changes(monk
         assert report.call_count == 1
         dashboard.button(key="sales_load_report").click().run()
         assert not dashboard.exception and len(dashboard.get("plotly_chart")) == 4
-        assert dashboard.get("download_button")
+        assert len(dashboard.get("download_button")) == 2
         assert report.call_args.kwargs == {
             "view": "sales", "days": 30, "aggregation": "weekly", "end_date": None,
             "state": "CA", "store_id": 1, "category": "FOODS", "department": "FOODS_1",

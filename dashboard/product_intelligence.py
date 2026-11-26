@@ -4,6 +4,7 @@ import requests
 import streamlit as st
 
 from dashboard import api_client
+from dashboard.business_reports import report_downloads, stamp_report
 from dashboard.catalog_widgets import select_product_entry, select_product_scope, select_store_scope
 from dashboard.sales_intelligence import _controls
 
@@ -42,18 +43,18 @@ def _basket(scope):
     return tuple(entry[0] for entry in selected)
 
 
-def _load(mode, fetch, params, *, ready=True):
+def _load(mode, fetch, params, *, ready=True, key=_RESULT_KEY, name="product"):
     signature = (mode, tuple(sorted(params.items())))
-    if st.session_state.get(_RESULT_KEY, (None,))[0] != signature or not ready:
-        st.session_state.pop(_RESULT_KEY, None)
-    if st.button("Load product analysis", type="primary", width="stretch", disabled=not ready):
-        st.session_state.pop(_RESULT_KEY, None)
+    if st.session_state.get(key, (None,))[0] != signature or not ready:
+        st.session_state.pop(key, None)
+    if st.button(f"Load {name} analysis", type="primary", width="stretch", disabled=not ready):
+        st.session_state.pop(key, None)
         with st.spinner("Aggregating historical demand…"):
             try:
-                st.session_state[_RESULT_KEY] = (signature, fetch(**params))
+                st.session_state[key] = (signature, stamp_report(fetch(**params)))
             except requests.HTTPError as error:
-                message = "Product analysis could not be loaded."
-                if error.response is not None and error.response.status_code in (404, 422, 503):
+                message = f"{name.capitalize()} analysis could not be loaded."
+                if error.response is not None and error.response.status_code in (404, 422, 501, 503):
                     try:
                         detail = error.response.json().get("detail")
                         if isinstance(detail, str):
@@ -62,8 +63,8 @@ def _load(mode, fetch, params, *, ready=True):
                         pass
                 st.error(message)
             except (requests.RequestException, ValueError):
-                st.error("Product analysis could not be loaded. Check the API and try again.")
-    return st.session_state.get(_RESULT_KEY, (None, None))[1]
+                st.error(f"{name.capitalize()} analysis could not be loaded. Check the API and try again.")
+    return st.session_state.get(key, (None, None))[1]
 
 
 def _table(frame):
@@ -77,10 +78,10 @@ def _table(frame):
     )
 
 
-def _render(result, mode):
+def _render(result, mode, params):
     st.caption(f"{result['period_start']} to {result['period_end']} · {result['period_days']} days")
     products = result["products"]
-    frames = {"products": pd.DataFrame(products)}
+    product_frame = pd.DataFrame(products)
     if "previous_period_start" in result:
         st.caption(f"Previous period {result['previous_period_start']} to {result['previous_period_end']}")
         if any(row["observed_days"] < result["period_days"]
@@ -90,7 +91,6 @@ def _render(result, mode):
         st.caption(f"{result['total']:,} matching results · offset {result['offset']:,}")
     if "summary" in result:
         summary = pd.DataFrame(result["summary"])
-        frames["summary"] = summary
         group = "segment" if mode == "Segments" else "classification"
         st.plotly_chart(px.bar(summary, x=group, y="total_demand", labels={"total_demand": "Units sold"}),
                         width="stretch")
@@ -98,12 +98,11 @@ def _render(result, mode):
     if not products:
         st.info("No products match the selected scope and page.")
     else:
-        _table(frames["products"])
+        _table(product_frame)
     if result.get("trend"):
         trend = pd.DataFrame(result["trend"])
         codes = {row["product_id"]: row["item_id"] for row in products}
         trend["item_id"] = trend["product_id"].map(codes)
-        frames["trend"] = trend
         chart_data = trend.assign(period=pd.to_datetime(trend["period"]))
         st.plotly_chart(
             px.line(chart_data, x="period", y="total_demand", color="item_id", markers=True,
@@ -113,15 +112,17 @@ def _render(result, mode):
     if mode == "Volume-based ABC" and products and any(
         row["cumulative_pct"] is not None for row in products
     ):
-        chart = px.line(frames["products"], x="rank", y="cumulative_pct", markers=True,
+        chart = px.line(product_frame, x="rank", y="cumulative_pct", markers=True,
                         hover_data=["item_id"], labels={"cumulative_pct": "Cumulative volume share (%)"})
         chart.add_hline(y=80, line_dash="dot")
         chart.add_hline(y=95, line_dash="dot")
         st.plotly_chart(chart, width="stretch")
         st.caption("The curve shows this page at its ranks in the complete filtered catalog.")
-    csv = pd.concat([frame.assign(section=name) for name, frame in frames.items()], ignore_index=True)
-    st.download_button("Download product analysis CSV", csv.to_csv(index=False),
-                       file_name=f"decisionos_products_{result['period_end']}.csv", mime="text/csv")
+    report_downloads(f"Product Intelligence — {mode}", result, params, (
+        "Demand measures units sold. Missing observations are excluded from daily statistics.",
+        "Zero-demand frequency uses observed days. Growth requires a nonzero previous total.",
+        "ABC uses volume share. Ranked and classified tables include the loaded page only.",
+    ))
 
 
 def show_product_intelligence():
@@ -183,4 +184,4 @@ def show_product_intelligence():
         return
     result = _load(mode, fetch, params, ready=ready)
     if result is not None:
-        _render(result, mode)
+        _render(result, mode, params)

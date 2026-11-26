@@ -34,9 +34,9 @@ class ReportQuery(SalesFilters):
     aggregation: Aggregation = "weekly"
 
 
-def _execute(operation, *args):
+def _execute(operation, *args, **kwargs):
     try:
-        return operation(*args)
+        return operation(*args, **kwargs)
     except AnalyticsNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except service.SalesWindowError as error:

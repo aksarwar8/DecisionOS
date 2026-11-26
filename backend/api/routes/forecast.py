@@ -11,12 +11,30 @@ from backend.services.forecast_service import (
     generate_product_forecast,
 )
 from src.decisionos.data.validate import HistoricalSalesError
+from backend.api.schemas.batch_forecast import BatchRequest, BatchResponse, Preview
+from backend.services import batch_forecast_service
 
 
 router = APIRouter(
     prefix="/forecast",
     tags=["Forecasting"],
 )
+
+
+@router.post("/scope-preview", response_model=Preview)
+def preview_scope(request: BatchRequest):
+    try:
+        return batch_forecast_service.scope_preview(request)
+    except HistoricalSalesError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post("/batch", response_model=BatchResponse)
+def batch_forecast(request: BatchRequest):
+    try:
+        return batch_forecast_service.generate_batch(request)
+    except HistoricalSalesError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @router.post("/", response_model=ForecastResponse)

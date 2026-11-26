@@ -26,6 +26,8 @@ class Settings:
     model_dir: str = "models/trained"
     forecast_output_dir: str = "."
     mlflow_artifact_dir: str = "mlartifacts"
+    forecast_max_pairs: int = 100
+    forecast_max_rows: int = 2800
 
     @staticmethod
     def project_path(path: str) -> Path:

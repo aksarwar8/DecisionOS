@@ -25,8 +25,11 @@ from dashboard.api_client import (
     get_demand_trends,
 )
 from dashboard.catalog_widgets import catalog_selection
+from dashboard.batch_forecast import show_batch_forecast
+from dashboard.calendar_intelligence import show_calendar_intelligence
 from dashboard.product_intelligence import show_product_intelligence
 from dashboard.sales_intelligence import show_executive_overview, show_sales_intelligence
+from dashboard.store_intelligence import show_store_intelligence
 
 
 
@@ -60,6 +63,8 @@ page = st.sidebar.radio(
         "Executive Overview",
         "Sales Intelligence",
         "Product Intelligence",
+        "Store & Category Intelligence",
+        "Seasonality & Events",
         "Demand Forecasting",
         "Product & Store Intelligence",
         "Model Intelligence",
@@ -84,9 +89,23 @@ elif page == "Sales Intelligence":
 elif page == "Product Intelligence":
     show_product_intelligence()
 
+elif page == "Store & Category Intelligence":
+    show_store_intelligence()
+
+elif page == "Seasonality & Events":
+    show_calendar_intelligence()
+
 elif page == "Demand Forecasting":
 
     st.title("Demand Forecasting")
+
+    forecasting_mode = st.radio("Forecast mode", ["Individual", "Batch and business scope"], horizontal=True)
+    if forecasting_mode == "Batch and business scope":
+        try:
+            show_batch_forecast()
+        except requests.RequestException:
+            st.error("Catalog information is unavailable.")
+        st.stop()
 
     st.write(
         "Generate future demand predictions using "
