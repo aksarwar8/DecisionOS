@@ -39,21 +39,26 @@ def _report(view, **params):
     return st.session_state.get(key, (None, None))[1]
 
 
-def _controls(prefix):
-    period_col, interval_col, end_col = st.columns(3)
+def _controls(prefix, *, show_interval=True):
+    columns = st.columns(3 if show_interval else 2)
+    period_col, end_col = columns[0], columns[-1]
     with period_col:
         days = st.selectbox("Analysis period", _PERIODS, format_func=lambda value: f"{value} days",
                             key=f"{prefix}_days")
-    with interval_col:
-        aggregation = st.selectbox("Trend interval", ["weekly", "daily", "monthly"],
-                                   format_func=str.title, key=f"{prefix}_interval")
+    values = {"days": days}
+    if show_interval:
+        with columns[1]:
+            values["aggregation"] = st.selectbox(
+                "Trend interval", ["weekly", "daily", "monthly"],
+                format_func=str.title, key=f"{prefix}_interval",
+            )
     with end_col:
         end_date = st.date_input(
             "Historical end date", value=None, min_value=date(1900, 1, 1),
             max_value=date.today(), key=f"{prefix}_end_date",
             help="Leave blank to end on the latest date with actual sales.",
         )
-    return {"days": days, "aggregation": aggregation, "end_date": end_date}
+    return {**values, "end_date": end_date}
 
 
 def _number(value, digits=0):

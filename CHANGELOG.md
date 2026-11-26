@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3
+
+- Added Product Intelligence with product-day metrics, growth and variability rankings, five-product comparison, and CSV exports.
+- Exposed historical product-store demand segments using the existing forecasting thresholds.
+- Added volume-based ABC analysis with cumulative contribution across the full filtered scope before pagination.
+
 ## 1.2.2
 
 - Enhanced Executive Overview with period-over-period demand, category contribution, and top product and store rankings.

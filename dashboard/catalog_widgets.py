@@ -35,7 +35,12 @@ def select_product_scope(prefix: str) -> tuple[str | None, str | None]:
 
 
 def select_product(prefix: str) -> int | None:
-    category, department = select_product_scope(prefix)
+    selection = select_product_entry(prefix, select_product_scope(prefix))
+    return selection[0] if selection else None
+
+
+def select_product_entry(prefix: str, scope) -> tuple[int, str] | None:
+    category, department = scope
     search = st.text_input("Search products", placeholder="Item code or product ID",
                            max_chars=100, key=f"{prefix}_search").strip()
     filters = (category, department, search)
@@ -70,10 +75,11 @@ def select_product(prefix: str) -> int | None:
             "Next", key=f"{prefix}_next", disabled=offset + PAGE_SIZE >= page["total"],
             on_click=_change_page, args=(offset_key, selection_key, offset + PAGE_SIZE),
         )
-    return st.selectbox(
+    product_id = st.selectbox(
         "Product", list(products), index=None, format_func=products.__getitem__,
         key=selection_key, disabled=not products, placeholder="Select an item code",
     )
+    return (product_id, products[product_id]) if product_id is not None else None
 
 
 def _change_page(offset_key, selection_key, offset):

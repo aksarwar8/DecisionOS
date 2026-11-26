@@ -10,13 +10,16 @@ RankOrder = Literal["top", "bottom"]
 ReportView = Literal["executive", "sales"]
 
 
-class SalesFilters(BaseModel):
+class SalesScope(BaseModel):
     days: int = Field(default=30, ge=1, le=365)
     end_date: date | None = Field(default=None, ge=date(2, 1, 1))
     store_id: int | None = Field(default=None, gt=0, le=2**31 - 1)
     state: str | None = Field(default=None, min_length=1, max_length=100)
     category: str | None = Field(default=None, min_length=1, max_length=100)
     department: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+class SalesFilters(SalesScope):
     product_id: int | None = Field(default=None, gt=0, le=2**31 - 1)
 
 

@@ -25,6 +25,7 @@ from dashboard.api_client import (
     get_demand_trends,
 )
 from dashboard.catalog_widgets import catalog_selection
+from dashboard.product_intelligence import show_product_intelligence
 from dashboard.sales_intelligence import show_executive_overview, show_sales_intelligence
 
 
@@ -58,6 +59,7 @@ page = st.sidebar.radio(
     [
         "Executive Overview",
         "Sales Intelligence",
+        "Product Intelligence",
         "Demand Forecasting",
         "Product & Store Intelligence",
         "Model Intelligence",
@@ -78,6 +80,9 @@ if page == "Executive Overview":
 
 elif page == "Sales Intelligence":
     show_sales_intelligence()
+
+elif page == "Product Intelligence":
+    show_product_intelligence()
 
 elif page == "Demand Forecasting":
 

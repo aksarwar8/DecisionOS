@@ -195,3 +195,23 @@ def get_sales_rankings(*, entity="product", order="top", limit=5, **filters):
 
 def get_sales_report(*, view="sales", aggregation="weekly", **filters):
     return _get_sales_analysis("sales-report", view=view, aggregation=aggregation, **filters)
+
+
+def get_product_performance(**params):
+    return _get_sales_analysis("product-performance", **params)
+
+
+def get_product_comparison(**params):
+    return _get_sales_analysis("product-comparison", **params)
+
+
+def get_product_rankings(**params):
+    return _get_sales_analysis("product-rankings", **params)
+
+
+def get_demand_segments(**params):
+    return _get_sales_analysis("demand-segments", **params)
+
+
+def get_abc_analysis(**params):
+    return _get_sales_analysis("abc-analysis", **params)

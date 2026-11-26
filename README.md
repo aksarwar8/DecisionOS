@@ -1,9 +1,10 @@
 # DecisionOS
 
-DecisionOS is a retail demand forecasting and business intelligence platform. It serves a Random Forest recursively and uses a historical mean for the zero-average demand segment. The current milestone, V1.2.2, adds sales intelligence to the existing forecasting, catalog, and product-store analytics workflows.
+DecisionOS is a retail demand forecasting and business intelligence platform. It serves a Random Forest recursively and uses a historical mean for the zero-average demand segment. The current milestone, V1.2.3, adds product intelligence to the existing forecasting, catalog, and sales analytics workflows.
 
 - **Executive Overview** compares adjacent sales periods and shows demand trends, category contribution, and top products and stores.
 - **Sales Intelligence** filters historical demand by state, store, category, and department, with daily, weekly, and monthly charts and a CSV export.
+- **Product Intelligence** measures demand variability and zero-demand frequency, ranks products, compares up to five products, and shows product-store demand segments and volume-based ABC analysis.
 - **Demand Forecasting** and **Product & Store Intelligence** use searchable catalogs so users can select item and store codes directly.
 - **Model Intelligence** exposes MLflow evaluation runs and registered model metadata.
 
@@ -96,3 +97,5 @@ Future milestones may expand forecasting evaluation, uncertainty, explainability
 [V1.1 learning guide](docs/engineering/v1_1_learning_guide.md) · [V1.1 implementation report](docs/engineering/v1_1_implementation_report.md) · [Changelog](CHANGELOG.md)
 
 [Product and store catalog guide](docs/engineering/v1_2_1_catalog_guide.md) · [Sales Intelligence guide](docs/engineering/v1_2_2_sales_intelligence_guide.md)
+
+[Product Intelligence guide](docs/engineering/v1_2_3_product_intelligence_guide.md)

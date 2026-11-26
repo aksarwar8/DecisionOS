@@ -117,10 +117,7 @@ def build_sales_query(filters: SalesFilters, dimensions, *, comparison=False, ag
     """), params
 
 
-def _read(filters, dimensions, *, comparison=False, aggregation=None):
-    statement, params = build_sales_query(
-        filters, dimensions, comparison=comparison, aggregation=aggregation,
-    )
+def read_sales_statement(statement, params, days):
     try:
         with get_engine().connect() as connection:
             connection.exec_driver_sql("SET LOCAL statement_timeout = '25s'")
@@ -136,8 +133,15 @@ def _read(filters, dimensions, *, comparison=False, aggregation=None):
     window = {
         key: result[key] for key in ("period_start", "period_end", "latest_sales_date")
     }
-    window["period_days"] = filters.days
+    window["period_days"] = days
     return result, window
+
+
+def _read(filters, dimensions, *, comparison=False, aggregation=None):
+    statement, params = build_sales_query(
+        filters, dimensions, comparison=comparison, aggregation=aggregation,
+    )
+    return read_sales_statement(statement, params, filters.days)
 
 
 def summarize_growth(window, groups):

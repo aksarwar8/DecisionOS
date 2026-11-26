@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from src.decisionos.ml.forecast import recursive_forecast
+from src.decisionos.ml.demand_segments import DEMAND_SEGMENTS, DEMAND_SEGMENT_UPPER_BOUNDS
 
 
 MODEL_SELECTION = {
@@ -45,13 +46,8 @@ def hybrid_forecast(
     # Assign demand segments.
     historical_stats["demand_segment"] = pd.cut(
         historical_stats["historical_average"],
-        bins=[-np.inf, 0, 1, 5, np.inf],
-        labels=[
-            "Zero average",
-            "Low demand",
-            "Medium demand",
-            "High demand",
-        ],
+        bins=[-np.inf, *DEMAND_SEGMENT_UPPER_BOUNDS, np.inf],
+        labels=DEMAND_SEGMENTS,
     )
 
     # Attach historical means and segment information.
