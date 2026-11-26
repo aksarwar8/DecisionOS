@@ -21,6 +21,8 @@ models/
 
 # Environment variables and secrets
 .env
+.env.*
+!.env.example
 .envrc
 
 # Build and distribution
@@ -59,3 +61,13 @@ tempCodeRunnerFile.py
 # OS files
 .DS_Store
 Thumbs.db
+
+# MLflow
+mlflow.db
+mlflow.db-shm
+mlflow.db-wal
+mlruns/
+mlartifacts/
+
+# Temporary forecast output
+forecast_output.csv
