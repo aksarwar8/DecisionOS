@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased — production engineering in progress
+
+- Added process-local request counters, a database readiness probe and a descriptive drift helper.
+- Added an unverified container prototype and documented the outstanding production work.
+- Added an opt-in PostgreSQL operational store and separate migration chain; migration testing is blocked by database permissions. Added bounded historical drift diagnostics and a demonstration mutation-token safeguard.
+- Added portfolio documentation and guarded experimental migrations against accidental use of the public schema. Local JSON remains the default.
+- Added optional research dependencies to development requirements so the default research unit tests can be collected in CI.
+
+## 1.4.3 — Model optimization and adaptive forecasting research
+
+- Evaluated bounded intermittent-demand parameter grids, LightGBM objectives, a two-stage hurdle model, a pooled direct model and a train-only adaptive rule.
+- Locked development selections before a separate 30-pair chronological holdout and recorded research results in MLflow.
+- Preserved the served candidate. The measured pair-level and aggregate accuracy trade-off did not justify packaging a deployment candidate.
+
+## Unreleased
+
+- Added simulated inventory assumptions, deterministic replenishment, budget allocation, scenarios, historical policy comparisons and simulated decision reviews.
+- Added the React inventory and decisions workspace and a bounded historical simulation report.
+
+- Added experimental statistical forecasting methods, empirical pair intervals, chunked local run snapshots, and demand and price risk signals.
+- Added React forecast selection, interval display, run retrieval and a risk page. Synthetic interval undercoverage remains an open limitation.
+
+- Defined the predictive and prescriptive AI roadmap and the external API boundary for a separate Generative and Agentic AI project.
+
+## 1.4.2 — Experimental feature research
+
+- Added a separate versioned research feature contract, bounded calendar/price extraction and matched LightGBM feature ablations.
+- Recorded three-origin 60-pair results and a separate MLflow research run. Production features and the candidate model remain unchanged.
+- Corrected the historical V1.4.1 research-runner dispatch and clarified that its recorded LightGBM result included the hybrid zero-history policy.
+
+## 1.4.1 — Forecast evaluation research
+
+- Added fixed reference and intermittent-demand baselines, strict research metrics, chronological window helpers and synthetic checks.
+- Added a bounded PostgreSQL benchmark with per-origin research forest training and local results.
+- Added train-only demand characterization, seeded stratified cohort sampling, LightGBM comparison, per-series RMSSE and matched hierarchical metrics.
+- Recorded a bounded 60-pair, three-origin comparison, research charts and a separate verified MLflow run. Results remain scoped to the sampled cohort.
+
+
 ## 1.3.2 — Professional React Frontend
 
 - Made React the primary dashboard with catalog-filtered analytics, comparisons, heatmaps, seasonality, pricing, forecast workload preview and batch runs, MLflow views, and loaded-result exports. Streamlit remains a legacy fallback while detailed feature acceptance continues.

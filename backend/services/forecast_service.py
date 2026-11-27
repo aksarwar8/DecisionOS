@@ -20,6 +20,7 @@ def generate_product_forecast(
     product_id: int,
     store_id: int,
     horizon: int,
+    method: str = "hybrid",
 ) -> pd.DataFrame:
     """
     Generate a multi-day hybrid demand forecast
@@ -48,7 +49,11 @@ def generate_product_forecast(
     ).tolist()
 
     # Load the registered Random Forest model.
-    model = load_forecasting_model()
+    model = load_forecasting_model() if method == "hybrid" else None
+
+    if method != "hybrid":
+        from src.decisionos.ml.strategies import forecast_history
+        return forecast_history(history_df, horizon, method)
 
     # Apply the existing hybrid forecasting policy.
     forecast_df = hybrid_forecast(

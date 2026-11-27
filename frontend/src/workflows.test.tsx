@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import Analytics from "./Analytics";
 import Forecast from "./Forecast";
+import Prescriptive from "./Prescriptive";
 import { reportContent } from "./reports";
 import { request } from "./api/client";
 
@@ -90,4 +91,62 @@ test("persists the theme preference across a fresh mount",()=>{
   render(<Example/>);
   expect(screen.getByRole("button",{name:"Toggle color theme"}).getAttribute("aria-pressed")).toBe("true");
   localStorage.removeItem("decisionos-theme");
+});
+
+test("submits selected method for interval and clears it when selection changes",async()=>{
+  mocked.mockImplementation(async(path)=>path==="/forecast/intervals"
+    ? {method:"tsb",coverage:0.8,calibration_count:35,limitation:"Historical calibration",forecasts:[]}
+    : catalog(path));
+  mount(<Forecast/>);
+  await screen.findByRole("option",{name:"FOODS_1"});
+  await screen.findByRole("option",{name:"CA_1"});
+  fireEvent.change(screen.getByLabelText("Product",{exact:true}),{target:{value:"4"}});
+  fireEvent.change(screen.getByLabelText("Store",{exact:true}),{target:{value:"1"}});
+  fireEvent.change(screen.getByLabelText("Method"),{target:{value:"tsb"}});
+  fireEvent.click(screen.getByRole("button",{name:"Estimate interval"}));
+  await screen.findAllByText(/Historical calibration/);
+  expect(mocked).toHaveBeenCalledWith("/forecast/intervals",expect.objectContaining({
+    method:"POST",body:expect.objectContaining({product_id:4,store_id:1,method:"tsb",coverage:0.8}),
+  }));
+  fireEvent.change(screen.getByLabelText("Method"),{target:{value:"hybrid"}});
+  expect(screen.queryByText(/Historical calibration/)).toBeNull();
+});
+
+test("inventory simulation is explicitly triggered and clears stale results",async()=>{
+  mocked.mockImplementation(async(path)=>{
+    if(path==="/forecast/runs") return [];
+    if(path==="/prescriptive/simulation") return {policies:[],limitation:"Simulated only"};
+    return catalog(path);
+  });
+  mount(<Prescriptive/>);
+  fireEvent.change(screen.getByLabelText("Analysis"),{target:{value:"simulation"}});
+  await screen.findByRole("option",{name:"FOODS_1"});
+  await screen.findByRole("option",{name:"CA_1"});
+  fireEvent.change(screen.getByLabelText("Product",{exact:true}),{target:{value:"4"}});
+  fireEvent.change(screen.getByLabelText("Store",{exact:true}),{target:{value:"1"}});
+  expect(mocked.mock.calls.some(([path])=>path==="/prescriptive/simulation")).toBe(false);
+  fireEvent.click(screen.getByRole("button",{name:"Run analysis"}));
+  await screen.findByText("Simulated only");
+  fireEvent.change(screen.getByLabelText("Current stock"),{target:{value:"22"}});
+  expect(screen.queryByText("Simulated only")).toBeNull();
+});
+
+test("inventory results from an earlier input are not displayed after a change",async()=>{
+  let finish:(value:unknown)=>void=()=>{};
+  mocked.mockImplementation(async(path)=>{
+    if(path==="/forecast/runs")return [];
+    if(path==="/prescriptive/simulation")return new Promise(resolve=>{finish=resolve;});
+    return catalog(path);
+  });
+  mount(<Prescriptive/>);
+  fireEvent.change(screen.getByLabelText("Analysis"),{target:{value:"simulation"}});
+  await screen.findByRole("option",{name:"FOODS_1"});
+  await screen.findByRole("option",{name:"CA_1"});
+  fireEvent.change(screen.getByLabelText("Product",{exact:true}),{target:{value:"4"}});
+  fireEvent.change(screen.getByLabelText("Store",{exact:true}),{target:{value:"1"}});
+  fireEvent.click(screen.getByRole("button",{name:"Run analysis"}));
+  await screen.findByRole("status");
+  fireEvent.change(screen.getByLabelText("Current stock"),{target:{value:"40"}});
+  finish({policies:[],limitation:"Old result must not appear"});
+  await waitFor(()=>expect(screen.queryByText("Old result must not appear")).toBeNull());
 });

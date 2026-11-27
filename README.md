@@ -1,6 +1,12 @@
-# DecisionOS
+# DecisionOS v3.0.0 ? Portfolio Release
 
-DecisionOS is a retail demand forecasting and business intelligence platform. It serves a Random Forest recursively and uses a historical mean for the zero-average demand segment. V1.2.5 completes the business analytics expansion with seasonality, event and SNAP analysis, quote-based pricing, and downloadable reports.
+This is a locally verified research and engineering portfolio release. The [container prototype](docs/deployment/docker_setup.md) and [monitoring guide](docs/engineering/production_mlops_learning_guide.md) describe implemented pieces and remaining gaps; they are not deployment readiness claims.
+
+An optional PostgreSQL operational record store has a separate migration history, but its migration has not yet been tested or applied. Local JSON remains the default.
+
+DecisionOS is a research-driven retail predictive and prescriptive AI portfolio project. It helps investigate historical demand, compare forecasts and simulate replenishment where actual inventory data is unavailable. It uses historical M5 data, not live Walmart sales. The default hybrid recursively serves a registered Random Forest and uses a historical mean for its zero-average segment.
+
+The stack combines PostgreSQL, Python, Pandas, scikit-learn, MLflow, FastAPI, React, TypeScript, Vite and ECharts. Inventory and costs are simulated; no real purchasing is performed.
 
 - **Executive Overview** compares adjacent sales periods and shows demand trends, category contribution, and top products and stores.
 - **Sales Intelligence** filters historical demand by state, store, category, and department, with daily, weekly, and monthly charts and a CSV export.
@@ -11,6 +17,7 @@ DecisionOS is a retail demand forecasting and business intelligence platform. It
 - **Demand Forecasting** and **Product & Store Intelligence** use searchable catalogs so users can select item and store codes directly.
 - **Batch forecasting** previews a catalog scope, validates aligned pair histories, and aggregates eligible forecasts with coverage and model provenance.
 - **Model Intelligence** exposes MLflow evaluation runs and registered model metadata.
+- **Risk and simulated decisions** provide descriptive anomaly signals, inventory assumptions, replenishment recommendations, budget scenarios and historical policy replay.
 
 ## Architecture
 
@@ -19,6 +26,7 @@ PostgreSQL actual sales -> training data validation -> lag and calendar features
 PostgreSQL pair history -> recursive Random Forest and hybrid policy -> FastAPI -> React
 PostgreSQL actual sales -> analytics windows and summaries -> FastAPI -> React
 MLflow tracking and registry -> model loading, run metadata, and evaluation history
+Forecasts + simulated inventory assumptions -> decision simulation -> FastAPI -> React
 ```
 
 | Location | Purpose |
@@ -33,7 +41,7 @@ MLflow tracking and registry -> model loading, run metadata, and evaluation hist
 
 ## Local setup
 
-The primary React dashboard in `frontend/` supports analytics, individual and batch forecasting, MLflow metadata and report exports. The user has confirmed that it runs in a browser. Detailed workflow acceptance remains tracked in the [feature checklist](docs/engineering/frontend_feature_parity.md). The [migration guide](docs/engineering/frontend_migration_guide.md) describes the legacy Streamlit fallback.
+The primary React dashboard in `frontend/` supports analytics, individual and batch forecasting, MLflow metadata and report exports. The user completed manual browser acceptance testing and confirmed that the application works. The [feature checklist](docs/engineering/frontend_feature_parity.md) preserves earlier detailed tracking. The [migration guide](docs/engineering/frontend_migration_guide.md) describes the legacy Streamlit fallback.
 
 Use Python 3.11. Run these commands from the repository root in PowerShell when setting up a new checkout.
 
@@ -44,9 +52,9 @@ python -m pip install -r requirements-dev.txt
 Copy-Item .env.example .env
 ```
 
-Reuse an existing working environment and `.env` when available. Use `requirements.txt` for runtime dependencies alone. The automated tests and health endpoint work without PostgreSQL data or an MLflow registry.
+Reuse an existing working environment and `.env` when available. Use `requirements.txt` for runtime dependencies alone. The development requirements include the research dependencies needed by the full default test suite; use `requirements-research.txt` independently for optional research workflows. The automated tests and health endpoint work without PostgreSQL data or an MLflow registry.
 
-- Set `DATABASE_URL` to the existing DecisionOS PostgreSQL database using the `postgresql+psycopg` driver. The supported application data lives in `sales`, `calendar`, `products` and `stores`. The checkout has no usable Alembic migration sources, so schema bootstrap requires a separate schema source or an existing database. [Database review](docs/engineering/database_review.md)
+- Set `DATABASE_URL` to the existing DecisionOS PostgreSQL database using the `postgresql+psycopg` driver. The historical retail migration sources are missing, so schema bootstrap requires an independently provisioned database. The separate experimental operational migration does not recreate the retail schema and has not been verified. [Database review](docs/engineering/database_review.md)
 - Keep the existing MLflow SQLite file and accessible artifact locations, or configure `MLFLOW_TRACKING_URI` for an existing store. The default resolves `mlflow.db` from the repository root. Forecasting loads `DecisionOS-Hybrid-Forecaster@candidate` by default. The API caches the model for the process, so restart the API after intentionally changing the alias or configuration.
 - The dashboard uses `API_BASE_URL=http://127.0.0.1:8000` by default. Process environment variables override the project `.env`. Repository-relative model, forecast output, and tracking paths resolve from the project root.
 
@@ -104,9 +112,9 @@ The guarded scripts in `experiments/` can query substantial history, train model
 
 The existing M5 28-day recursive evaluation for April 1–28, 2011 reported hybrid MAE **0.6198**, RMSE **1.9979**, and WAPE **77.03%** on 853,720 observations. The four seven-day rolling-origin folds in the same month reported average MAE **0.5866**, RMSE **1.8579**, and mean fold WAPE **73.2290%**. Those historical runs cover one month and were not repeated for V1.1. [28-day evaluation](docs/experiments/hybrid_model_evaluation.md) · [Rolling-origin evaluation](docs/experiments/rolling_origin_backtest.md)
 
-Recursive forecasts reuse prior predictions and can accumulate errors across the horizon. Batch forecasting enforces configured synchronous workload limits and reports excluded histories. The direct prediction endpoint relies on caller-supplied feature values. Broad analytics can approach database time limits, as documented in the database review. Clean-install reproducibility and detailed browser workflow acceptance remain unverified. Application health does not establish database or model readiness.
+Recursive forecasts reuse prior predictions and can accumulate errors across the horizon. Batch forecasting enforces configured synchronous workload limits and reports excluded histories. The direct prediction endpoint relies on caller-supplied feature values. Broad analytics can approach database time limits, as documented in the database review. Clean-install reproducibility remains unverified. Application health does not establish database or model readiness.
 
-Future milestones may expand forecasting evaluation, uncertainty, explainability, replenishment recommendations, retrieval and LLM tooling, deployment and operational monitoring.
+Forecast intervals and anomaly signals are experimental. Inventory balances, supplier inputs and costs are simulated. No real financial savings, causal event effects or population-wide model performance should be inferred. Docker execution and optional PostgreSQL operational migrations remain unverified; those migrations are unapplied and local JSON is the supported default operational record store. Public cloud deployment has not been performed. Production-grade authentication is incomplete; large-scale resumable forecasting and automated retraining and advanced model promotion remain future work. Forecast uncertainty validation is limited.
 
 [V1.1 learning guide](docs/engineering/v1_1_learning_guide.md) · [V1.1 implementation report](docs/engineering/v1_1_implementation_report.md) · [Changelog](CHANGELOG.md)
 
@@ -119,3 +127,24 @@ Future milestones may expand forecasting evaluation, uncertainty, explainability
 [Batch forecasting guide](docs/engineering/v1_3_1_batch_hierarchical_forecasting_guide.md)
 
 [Seasonality, Events & Reporting guide](docs/engineering/v1_2_5_seasonality_events_reporting_guide.md) · [Analytics performance plan](docs/engineering/analytics_performance_plan.md)
+
+
+Forecasting research and measured bounded benchmark results are described in [RESEARCH.md](RESEARCH.md). The system overview is in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+Portfolio materials: [project summary](docs/portfolio/project_summary.md), [interview guide](docs/portfolio/interview_guide.md) and [demo guide](docs/portfolio/demo_guide.md). Collaboration notes are in [AI_COLLAB.md](AI_COLLAB.md).
+
+A separate train-only stratified research study compared 12 forecasting methods on 60 historical pairs at three origins. Its sampled-cohort pooled WAPE ranged from 65.65% for TSB to 101.98% for the research Random Forest. The cohort was deliberately stratified and is not a population estimate. See the [benchmark report](docs/research/v1_4_1_forecasting_benchmark_report.md).
+
+A matched V1.4.2 development study tested experimental feature families on the saved 60-pair cohort. The canonical LightGBM configuration outperformed the expanded sets on pooled WAPE in that sample. [Research results](docs/research/v1_4_2_feature_ablation_report.md)
+
+
+## Deferred engineering
+
+Future work includes verified PostgreSQL operational migrations, resumable forecast jobs, durable telemetry, controlled retraining and promotion, production-grade authentication, aggregate interval calibration, performance benchmarks and cloud deployment. Docker configuration is unverified. The served model has not been replaced.
+
+DecisionOS retains modular FastAPI interfaces for external consumers. Generative and agentic AI is a separate project.
+The V1.4.3 study evaluated model objectives and adaptive policies on development data, then assessed locked methods on a separate 30-pair chronological holdout. The pair-level WAPE leader showed substantial aggregate underprediction. [Optimization report](docs/research/v1_4_3_optimization_report.md)
+
+Predictive intelligence now includes selectable statistical forecast strategies, pair-level empirical intervals, bounded locally persisted forecast runs, and descriptive demand and price risk signals. The hybrid remains the default. The [evaluation](docs/research/predictive_intelligence_evaluation.md) records calibration and synthetic limitations, and the [architecture](docs/architecture/predictive_intelligence_architecture.md) describes local persistence.
+
+Prescriptive intelligence adds a clearly simulated inventory and decision workspace. Saved single-pair point forecasts can be combined with user-supplied stock, lead-time and cost assumptions for replenishment, scenarios and a bounded historical policy replay. These are simulated decisions, not actual inventory records or purchases. [Prescriptive evaluation](docs/research/prescriptive_intelligence_evaluation.md)

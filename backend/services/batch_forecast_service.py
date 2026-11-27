@@ -9,6 +9,7 @@ from src.decisionos.config import get_settings
 from src.decisionos.data.extract import get_engine
 from src.decisionos.data.validate import HistoricalSalesError, validate_historical_sales
 from src.decisionos.ml.batch_forecast import forecast_aligned_batch
+from src.decisionos.ml.strategies import forecast_history
 
 
 def resolve_scope(request):
@@ -152,7 +153,7 @@ def _breakdowns(forecasts, candidates):
     return results
 
 
-def generate_batch(request):
+def generate_batch(request, progress=None):
     candidates = resolve_scope(request)
     preview = scope_preview(request, candidates)
     if not preview["within_limits"]:
@@ -169,9 +170,19 @@ def generate_batch(request):
         )
         raise HistoricalSalesError(f"No pairs have sufficient valid history at the common origin. {details}")
     settings = get_settings()
-    model, version = load_forecasting_model_info()
+    model, version = load_forecasting_model_info() if request.method == "hybrid" else (None, "builtin-v1")
     inference_start = time.perf_counter()
-    forecast = forecast_aligned_batch(model, eligible, request.horizon)
+    keys = eligible[["product_id", "store_id"]].drop_duplicates().sort_values(["product_id", "store_id"])
+    chunks = []
+    for offset in range(0, len(keys), request.batch_size):
+        selected = keys.iloc[offset:offset + request.batch_size]
+        chunk = eligible.merge(selected, on=["product_id", "store_id"], validate="many_to_one")
+        result = (forecast_aligned_batch(model, chunk, request.horizon) if request.method == "hybrid"
+                  else forecast_history(chunk, request.horizon, request.method))
+        chunks.append(result)
+        if progress is not None:
+            progress(min(offset + len(selected), len(keys)), len(keys))
+    forecast = pd.concat(chunks, ignore_index=True)
     inference = time.perf_counter() - inference_start
     daily = forecast.groupby("date", as_index=False)["prediction"].sum()
     eligible_pairs = eligible[["product_id", "store_id"]].drop_duplicates()
@@ -184,7 +195,9 @@ def generate_batch(request):
         **preview, "eligible_pairs": len(eligible_pairs), "excluded_pairs": len(exclusions),
         "exclusions": exclusions, "coverage": "partial" if exclusions else "complete",
         "origin": origin.date(), "forecast_start": daily["date"].min().date(),
-        "forecast_end": daily["date"].max().date(), "model_uri": settings.registered_model_uri,
+        "forecast_end": daily["date"].max().date(), "model_uri": (
+            settings.registered_model_uri if request.method == "hybrid" else f"builtin:{request.method}"
+        ),
         "model_version": version, "daily": daily.to_dict("records"),
         "total_prediction": float(daily["prediction"].sum()),
         "historical": historical.rename(columns={"sales_quantity": "demand"}).to_dict("records"),

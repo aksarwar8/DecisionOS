@@ -1,5 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -18,6 +19,8 @@ class BatchRequest(BaseModel):
     category: str | None = Field(default=None, min_length=1, max_length=100)
     department: str | None = Field(default=None, min_length=1, max_length=100)
     horizon: Literal[7, 14, 28] = 7
+    method: Literal["hybrid", "tsb", "moving_average", "seasonal_naive"] = "hybrid"
+    batch_size: int = Field(default=50, ge=1, le=100)
     origin: date | None = Field(default=None, ge=date(2, 1, 1))
 
     @model_validator(mode="after")
@@ -90,3 +93,14 @@ class BatchResponse(Preview):
     coverage: Literal["complete", "partial"]
     extraction_seconds: float
     inference_seconds: float
+
+
+class ForecastRun(BaseModel):
+    run_id: UUID
+    status: Literal["running", "completed", "failed"]
+    created_at: datetime
+    request: BatchRequest
+    completed_pairs: int
+    total_pairs: int | None
+    error: str | None = None
+    result: BatchResponse | None = None

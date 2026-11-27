@@ -8,7 +8,7 @@ export class ApiError extends Error {
 }
 
 export async function request<T>(path: string, options: {
-  params?: Params; method?: "GET" | "POST"; body?: unknown; signal?: AbortSignal; timeout?: number;
+  params?: Params; method?: "GET" | "POST" | "PUT"; body?: unknown; signal?: AbortSignal; timeout?: number;
 } = {}): Promise<T> {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(options.params ?? {})) {

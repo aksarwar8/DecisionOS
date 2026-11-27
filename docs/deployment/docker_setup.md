@@ -1,0 +1,11 @@
+# Container prototype
+
+The included Compose configuration is an **unverified local prototype**, not a production deployment. Docker was not available in the execution environment. It requires an existing reachable PostgreSQL database and MLflow server; no data or registry is copied into the images. An empty database is not a usable demonstration dataset. A bounded demonstration dataset and its loader have not yet been supplied.
+
+Set `DATABASE_URL` and `MLFLOW_TRACKING_URI` in your local environment, using container-reachable hostnames, then run `docker compose config` and `docker compose up --build`. The frontend binds to `127.0.0.1:8080` and the API to `127.0.0.1:8000`. The API health check is liveness only. Compose waits for the API health check before starting the frontend, as described in [Docker's startup-order documentation](https://docs.docker.com/compose/how-tos/startup-order/).
+
+Named volumes hold existing local-style JSON snapshots. Do not delete volumes if their contents are needed. Configure authentication, TLS, backups, registry access and actual database provisioning before exposure. Container startup, dependency installation and volume permissions still require live verification.
+
+`APP_ENV=local` is intended only for a private local demonstration. For non-local execution set a secret `API_ADMIN_TOKEN`; this prevents unauthenticated modifying HTTP requests, but the current React client has no token entry. This is not complete public security. When Docker is available, check `docker compose config`, `docker compose build`, `docker compose up -d`, `docker compose ps`, `curl http://localhost:8000/health/ready`, and open `http://localhost:8080`. These checks have not been executed here.
+
+For PostgreSQL persistence, first provision a disposable database and an empty, non-public schema with a writable role. Set `DECISIONOS_OPERATIONAL_SCHEMA` to that schema and test `python -m alembic -c operational_alembic.ini upgrade head` there. The migration refuses the default or public schema. Review the migration and database permissions before applying it elsewhere, then explicitly set `DECISIONOS_RECORD_STORE=postgres` and use the same schema for the application. The historical Alembic version table is independent. No demonstration data loader currently exists.

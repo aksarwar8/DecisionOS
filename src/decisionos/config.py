@@ -28,6 +28,8 @@ class Settings:
     mlflow_artifact_dir: str = "mlartifacts"
     forecast_max_pairs: int = 100
     forecast_max_rows: int = 2800
+    api_admin_token: str | None = field(default=None, repr=False)
+    cors_origins: str = ""
 
     @staticmethod
     def project_path(path: str) -> Path:

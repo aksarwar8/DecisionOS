@@ -1,0 +1,13 @@
+# Production engineering: current progress
+
+`backend/services/operational_metrics.py` maintains request counts, server-error counts and accumulated request duration under a lock. These are local to one process and reset on restart. `backend/main.py` records responses and keeps the request identifier in the response. `/metrics` returns a JSON snapshot; it is not a Prometheus endpoint.
+
+`/health/ready` executes a small database connectivity query and returns a generic 503 on failure. This is not a test of retail table content, MLflow, or model readiness. The drift helper in `src/decisionos/monitoring/drift.py` compares finite reference and recent observations without database access, and reports missing values separately. It is a diagnostic building block, not an automatic retraining or alert system.
+
+Remaining work includes migration and storage verification, per-chunk recovery and duplicate protection, production-grade authentication, model lifecycle approval workflows, persistent telemetry and drift pipelines, and a demonstrated container setup. Existing snapshots and the model registry remain untouched.
+
+Update: `operational_migrations` provides a separate Alembic chain and `backend/services/operational_store.py` provides optional transactional JSONB records for forecasts, inventory and reviews. Set `DECISIONOS_RECORD_STORE=postgres` only after the migration has been verified and applied by a database administrator. Missing database records can fall back to local inventory/forecast snapshots, but snapshots are never automatically imported. Cross-store listing is not merged. The configured role could not create an isolated schema, so persistence and migration remain unverified. Never run a downgrade against data you need: it deletes the new operational table.
+
+For non-local `APP_ENV`, modifying HTTP requests require `API_ADMIN_TOKEN` via `Authorization: Bearer ...`; no token returns 503. A configured token is enforced locally too. This shared token is a minimal demonstration safeguard, not user identity or role-based authorization. The React client does not yet provide a token entry workflow. `CORS_ORIGINS` is an explicit comma-separated list; wildcard origins are rejected. GET endpoints remain accessible, so do not expose this application publicly without additional access controls and TLS.
+
+`/monitoring/demand-drift` performs an on-demand 90-day historical replay for one product/store, splits the available observations into chronological halves and compares them with a configurable descriptive threshold. Results do not establish a model failure or trigger retraining.

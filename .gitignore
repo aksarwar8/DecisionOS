@@ -13,6 +13,13 @@ data/raw/
 data/processed/
 *.parquet
 *.csv
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+*.npy
+*.npz
 
 # Models
 models/
@@ -74,3 +81,14 @@ mlartifacts/
 
 # Temporary forecast output
 forecast_output.csv
+# Research run artifacts can be regenerated from the documented configuration.
+/research_output/
+
+# Local forecast run snapshots
+/forecast_runs/
+
+# Local simulated decision reviews
+/decision_reviews/
+
+# Local simulated inventory records
+/simulated_inventory/

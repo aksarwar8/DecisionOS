@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: .
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL for an existing accessible database}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:?Set MLFLOW_TRACKING_URI for an existing tracking server}
+      APP_ENV: ${APP_ENV:-local}
+      API_ADMIN_TOKEN: ${API_ADMIN_TOKEN:-}
+      DECISIONOS_RECORD_STORE: ${DECISIONOS_RECORD_STORE:-local}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - forecast_runs:/app/forecast_runs
+      - decision_reviews:/app/decision_reviews
+      - simulated_inventory:/app/simulated_inventory
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+volumes:
+  forecast_runs:
+  decision_reviews:
+  simulated_inventory:
